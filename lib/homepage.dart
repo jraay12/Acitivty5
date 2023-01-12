@@ -13,43 +13,66 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   File? file;
   ImagePicker image = ImagePicker();
+  PermissionStatus? storageStatus;
+  PermissionStatus? cameraStatus;
+  checkPermission() {
 
-  checkPermission(){
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("This Permission is Recommended.")));
+    if (storageStatus == PermissionStatus.granted || cameraStatus == PermissionStatus.granted){
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              animation: AlwaysStoppedAnimation(2),
+              backgroundColor: Colors.red,
+              content: Text("Permission Allowed!", style: TextStyle(fontSize: 20),)));
+    }else if (storageStatus == PermissionStatus.denied || cameraStatus == PermissionStatus.denied || cameraStatus == PermissionStatus.limited){
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              animation: AlwaysStoppedAnimation(2),
+              backgroundColor: Colors.red,
+              content: Text("Permission Denied!", style: TextStyle(fontSize: 20),)));
+    }
   }
 
-  requestFilePermission() async {
-    PermissionStatus storageStatus = await Permission.storage.request();
+  requestPermissionStorage() async {
+    storageStatus = await Permission.storage.request();
 
     if (storageStatus == PermissionStatus.granted) {
-      var img = await image.getImage(source: ImageSource.gallery);
-
-      setState(() {
-        file = File(img!.path);
-      });
+      checkPermission();
     }
-    if (storageStatus == PermissionStatus.denied) {
+    if (storageStatus == PermissionStatus.denied ) {
       checkPermission();
     }
 
-    if (storageStatus == PermissionStatus.permanentlyDenied) {
+    if (storageStatus == PermissionStatus.permanentlyDenied ) {
+      openAppSettings();
+    }
+  }
 
+  requestPermissionCamera()async {
+    cameraStatus = await Permission.camera.request();
+
+    if (storageStatus == PermissionStatus.granted) {
+        checkPermission();
+    }
+    if (storageStatus == PermissionStatus.denied ) {
+      checkPermission();
+    }
+
+    if (storageStatus == PermissionStatus.permanentlyDenied ) {
       openAppSettings();
     }
   }
 
   @override
   void initState() {
-    requestFilePermission();
+    requestPermissionStorage();
+    requestPermissionCamera();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-            title: const Text("Upload Image")
-        ),
+        appBar: AppBar(title: const Text("Upload Image")),
         body: Column(
           children: [
             const Padding(padding: EdgeInsetsDirectional.only(top: 20)),
@@ -58,28 +81,70 @@ class _HomePageState extends State<HomePage> {
                 width: 400,
                 color: Colors.white24,
                 child: file == null
-                    ? const Icon(Icons.image, size: 70,) : Image.file(
-                    file!,
-                    fit: BoxFit.contain
-                )
-            ),
+                    ? const Icon(
+                        Icons.image,
+                        size: 70,
+                      )
+                    : Image.file(file!, fit: BoxFit.contain)),
             const Spacer(),
-            SizedBox(
-              child: Center(
-                  child: Padding(padding: const EdgeInsets.symmetric(vertical: 20),
-                    child: ElevatedButton(onPressed: () {
-                      requestFilePermission();
-                    },
-                      child: const Text("Upload Image", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    )
-                    ,)
-              ),
-
+            Row(
+              children: [
+                const Padding(padding: EdgeInsetsDirectional.only(start: 120.0)),
+                SizedBox(
+                  child: Center(
+                      child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (storageStatus == PermissionStatus.granted){
+                          getImage();
+                        }else{
+                          requestPermissionStorage();
+                        }
+                      },
+                      child: const Text("Upload Image",
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                    ),
+                  )),
+                ),
+                const Padding(padding: EdgeInsetsDirectional.only(start: 40.0)),
+                SizedBox(
+                  child: Center(
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: ElevatedButton(
+                            onPressed: () {
+                              if (cameraStatus == PermissionStatus.granted){
+                                getCamera();
+                              }else{
+                                requestPermissionCamera();
+                              }
+                            },
+                            child: const Text("Camera",
+                                style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold)))),
+                  ),
+                ),
+                const Padding(padding: EdgeInsetsDirectional.only(bottom: 200.0))
+              ],
             )
           ],
-        )
-    );
+        ));
+  }
+
+  getImage() async {
+    var img = await image.pickImage(source: ImageSource.gallery);
+    setState(() {
+      file = File(img!.path);
+    });
+  }
+
+  getCamera() async {
+    var img = await image.pickImage(source: ImageSource.camera);
+    setState(() {
+      file = File(img!.path);
+    });
   }
 }
-
-

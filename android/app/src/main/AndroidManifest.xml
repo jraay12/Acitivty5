@@ -2,6 +2,7 @@
     package="com.example.mobile_assignment">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
 
    <application
         android:label="Image Uploader"
